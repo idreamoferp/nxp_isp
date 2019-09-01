@@ -571,7 +571,10 @@ def unichar(i):
   except ValueError:
     return struct.pack('i', i).decode('utf-32')
 
+spinner_starting_point = 0
+
 def progress_bar(bar_length, current_block, total_blocks):
+  global spinner_starting_point
   bar_len = bar_length
   filled_len = int(round(bar_len * (current_block + 1) / float(total_blocks)))
 
@@ -584,10 +587,12 @@ def progress_bar(bar_length, current_block, total_blocks):
       current_block + 1, int(total_blocks))
 
   sys.stdout.write(
-      '%s %s%% %s %s\r' %
+      '\r▕%s▏ %s%% %s %s ' %
       (bar, percents,
-       selected_animation[current_block % len(selected_animation)],
+       selected_animation[spinner_starting_point % len(selected_animation)],
        suffix))
+
+  spinner_starting_point += 1
 
   sys.stdout.flush()
 
@@ -891,6 +896,8 @@ class nxpprog:
             self.sector_commands_need_bank = False
         else:
             self.sector_commands_need_bank = True
+        self.current_address = 0
+        self.total_length = 0
 
     def connection_init(self, osc_freq):
         self.sync(osc_freq)
@@ -1146,9 +1153,10 @@ class nxpprog:
         else:
             return data
 
-    def write_ram_data(self, addr, data):
+    def write_ram_data(self, addr, data, total_length):
         image_len = len(data)
         for i in range(0, image_len, self.uu_block_size):
+            progress_bar(30, self.current_address, self.total_length)
 
             a_block_size = image_len - i
             if a_block_size > self.uu_block_size:
@@ -1325,6 +1333,7 @@ class nxpprog:
             image = self.insert_csum(image)
 
         image_len = len(image)
+        self.total_length = image_len
         # pad to a multiple of ram_block size with 0xff
         pad_count_rem = image_len % ram_block
         if pad_count_rem != 0:
@@ -1353,10 +1362,10 @@ class nxpprog:
             logging.debug("Writing %d bytes to 0x%x" %
                 (a_ram_block, flash_addr_start))
 
-            progress_bar(30, flash_addr_start, image_len)
+            self.current_address = flash_addr_start
 
             self.write_ram_data(ram_addr,
-                    image[image_index: image_index + a_ram_block])
+                    image[image_index: image_index + a_ram_block], image_len)
 
             s_flash_sector = self.find_flash_sector(flash_addr_start)
 

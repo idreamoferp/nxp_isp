@@ -631,10 +631,9 @@ class AutoLPCPortFinder:
 
                 if sync_successful:
                     logging.info("LPC device found on this port!")
-                    logging.debug("WE GOOD YA HERD")
                     port.close()
                     return port_info.device
-            except serial.SerialException:
+            except (serial.SerialException, PermissionError):
                 logging.debug(f'excpetion on port {port}')
                 continue
 

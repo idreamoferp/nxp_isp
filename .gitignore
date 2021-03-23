@@ -1,2 +1,4 @@
 modules/
 *.pyc
+dist/
+*.egg-info/

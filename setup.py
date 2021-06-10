@@ -5,12 +5,15 @@ with open('README.md') as readme_file:
 
 setup_args = dict(
     name='nxpprog',
-    version='0.1.5',
+    version='0.2.8',
+    pymodules=['nxpprog'],
     description='Programmer for NXP arm processors using ISP protocol',
     long_description_content_type='text/markdown',
     long_description=README,
     license='MIT',
-    packages=setuptools.find_packages(),
+    entry_points={
+        'console_scripts': ['nxpprog=nxpprog:main'],
+    },
     author='SJSU-Dev2 Organization',
     author_email='kammcecorp@gmail.com',
     keywords=['NXP', 'SJSU', 'SJSU-Dev2'],
@@ -20,7 +23,8 @@ setup_args = dict(
 
 install_requires = [
     'intelhex',
-    'pyserial'
+    'pyserial',
+    'Click'
 ]
 
 if __name__ == '__main__':

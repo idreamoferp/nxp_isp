@@ -39,6 +39,8 @@ import serial
 import serial.serialutil
 import serial.tools.list_ports as port_list
 
+import click
+
 CMD_SUCCESS = 0
 INVALID_COMMAND = 1
 SRC_ADDR_ERROR = 2
@@ -1614,13 +1616,20 @@ class nxpprog:
         return ' '.join([id1, id2, id3, id4])
 
 
+def signal_handler(sig, frame):
+    if prog:
+        prog.device.close()
+    logging.error('Ctrl+C Pressed bailing out!')
+    sys.exit(0)
+
+@click.group()
 def main(argv=None):
     global prog
 
     args = parser.parse_args()
 
     # defaults
-    osc_freq = 16000 # kHz
+    osc_freq = 16000  # kHz
     baud = 115200
     device = None
     cpu = "autodetect"
@@ -1642,7 +1651,7 @@ def main(argv=None):
     get_serial_number = False
     udp = False
     port = -1
-    mac = "" # "0C-1D-12-E0-1F-10"
+    mac = ""  # "0C-1D-12-E0-1F-10"
 
     if args.list:
         logging.info("Supported cpus:")
@@ -1683,7 +1692,7 @@ def main(argv=None):
         control = True
     if args.filetype:
         filetype = args.filetype
-    if not (filetype == "bin" or filetype == "ihex" ):
+    if not (filetype == "bin" or filetype == "ihex"):
         panic("Invalid filetype: %s" % filetype)
     if args.start:
         start = True
@@ -1715,17 +1724,18 @@ def main(argv=None):
     if not device:
         device = port_finder.find_lpc_port()
         if device == None:
-            panic("Scanned serial ports, but could not find an LPC device. Are you sure it is connected to your computer?\n\n")
+            panic(
+                "Scanned serial ports, but could not find an LPC device. Are you sure it is connected to your computer?\n\n")
 
     if udp:
         if '.' in device:
             if ':' in device:
                 device, port = tuple(device.split(':'))
                 port = int(port)
-                if port<0 or port>65535:
+                if port < 0 or port > 65535:
                     panic("Bad port number: %d" % port)
             parts = [int(x) for x in device.split('.')]
-            if len(parts)!=4 or min(parts)<0 or max(parts)>255:
+            if len(parts) != 4 or min(parts) < 0 or max(parts) > 255:
                 panic("Bad IPv4-address: %s" % device)
             device = '.'.join([str(x) for x in parts])
         elif ':' in device:
@@ -1737,16 +1747,19 @@ def main(argv=None):
             port = 41825
         if mac:
             parts = [int(x, 16) for x in mac.split('-')]
-            if len(parts)!=6 or min(parts)<0 or max(parts)>255:
+            if len(parts) != 6 or min(parts) < 0 or max(parts) > 255:
                 panic("Bad MAC-address: %s" % mac)
-            mac = '-'.join(['%02x'%x for x in parts])
-            logging.info("cpu=%s ip=%s:%d mac=%s" % (cpu, device, port, mac))
+            mac = '-'.join(['%02x' % x for x in parts])
+            logging.info("cpu=%s ip=%s:%d mac=%s" %
+                            (cpu, device, port, mac))
         else:
             logging.info("cpu=%s ip=%s:%d" % (cpu, device, port))
     else:
-        logging.info("cpu=%s oscfreq=%d device=%s baud=%d" % (cpu, osc_freq, device, baud))
+        logging.info("cpu=%s oscfreq=%d device=%s baud=%d" %
+                        (cpu, osc_freq, device, baud))
 
-    prog = nxpprog(cpu, device, baud, osc_freq, xonxoff, control, (device, port, mac) if udp else None, verify)
+    prog = nxpprog(cpu, device, baud, osc_freq, xonxoff,
+                    control, (device, port, mac) if udp else None, verify)
 
     if erase_only:
         prog.erase_all(verify)
@@ -1778,11 +1791,12 @@ def main(argv=None):
 
         if not verify_only:
             start = time.time()
-            success = prog.prog_image(image, flash_addr_base, erase_all, verify)
+            success = prog.prog_image(
+                image, flash_addr_base, erase_all, verify)
             stop = time.time()
             elapsed = stop - start
             logging.info("Programmed %s in %.1f seconds" %
-                ("successfully" if success else "with errors", elapsed))
+                            ("successfully" if success else "with errors", elapsed))
 
         if verify:
             start = time.time()
@@ -1790,18 +1804,12 @@ def main(argv=None):
             stop = time.time()
             elapsed = stop - start
             logging.info("Verified %s in %.1f seconds" %
-                ("successfully" if success else "with errors", elapsed))
+                            ("successfully" if success else "with errors", elapsed))
 
         if not verify_only:
             prog.start(flash_addr_base)
 
     prog.device.close()
-
-def signal_handler(sig, frame):
-    if prog:
-        prog.device.close()
-    logging.error('Ctrl+C Pressed bailing out!')
-    sys.exit(0)
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)

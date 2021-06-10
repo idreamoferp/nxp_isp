@@ -40,3 +40,7 @@ The image start address defaults to 0.
 When the image start address is 0 a checksum is inserted in the reserved
 interrupt vector so that the bootloader will boot the image.
 The image file is a raw binary file (output from objcopy -O binary).
+
+implement click on the side
+convert click args
+

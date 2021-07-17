@@ -1546,7 +1546,7 @@ def signal_handler(sig, frame):
 @click.option(
     '--binary',
     required=True,
-    help='path to the firmware.bin file you want to program the board with.')
+    help='Path to the firmware.bin file you want to program the board with.')
 
 @click.option(
     '--device',
@@ -1560,40 +1560,40 @@ def signal_handler(sig, frame):
 @click.option(
     '--udp',
     is_flag=True,
-    help='program processor using Ethernet.')
+    help='Program processor using Ethernet.')
 
 @click.option(
     '--cpu',
     type=str,
     default="",
-    help='set the cpu type.')
+    help='Set the cpu type.')
 
 @click.option(
     '--osfreq',
     type=int,
     default=0,
-    help='set the oscillator frequency.')
+    help='Set the oscillator frequency.')
 
 @click.option(
     '--baud',
     type=int,
     default=0,
-    help='set the baud rate.')
+    help='Set the baud rate.')
 
 @click.option(
     '--xonxoff',
     is_flag=True,
-    help='enable xonxoff flow control.')
+    help='Enable xonxoff flow control.')
 
 @click.option(
     '--control',
     is_flag=True,
-    help='use RTS and DTR to control reset and int0.')
+    help='Use RTS and DTR to control reset and int0.')
 
 @click.option(
     '--start',
     is_flag=True,
-    help='start the device at a set address.')
+    help='Start the device at a set address.')
 
 @click.option(
     '-v',
@@ -1605,66 +1605,66 @@ def signal_handler(sig, frame):
     '--read',
     type=str,
     default="",
-    help='read from a file.')
+    help='Read from a file.')
 
 @click.option(
     '--len',
     type=int,
     default=0,
-    help='number of bytes to be read.')
+    help='Number of bytes to be read.')
 
 @click.option(
     '--serialnumber',
     is_flag=True,
-    help='get the device serial number.')
+    help='Get the device serial number.')
 
 @click.option(
     '--list',
     is_flag=True,
-    help='list supported processors.')
+    help='List supported processors.')
 
 @click.option(
     '--addr',
     type=str,
     default='',
-    help='set the base address for the image.')
+    help='Set the base address for the image.')
 
 @click.option(
     '--verify',
     is_flag=True,
-    help='read the device after programming.')
+    help='Read the device after programming.')
 
 @click.option(
     '--verifyonly',
     is_flag=True,
-    help='don\'t program, just verify.')
+    help='Don\'t program, just verify.')
 
 @click.option(
     '--eraseonly',
     is_flag=True,
-    help='don\'t program, just erase. Implies --eraseall.')
+    help='Don\'t program, just erase. Implies --eraseall.')
 
 @click.option(
     '--eraseall',
     is_flag=True,
-    help='erase all flash not just the area written to.')
+    help='Erase all flash not just the area written to.')
 
 @click.option(
     '--blankcheck',
     is_flag=True,
-    help='don\'t program, just check that the flash is blank.')
+    help='Don\'t program, just check that the flash is blank.')
 
 @click.option(
     '--filetype',
     type=str,
     default='bin',
-    help='set filetype to intel hex format or raw binary.')
+    help='Set filetype to intel hex format or raw binary.')
 
 @click.option(
     '--bank',
     type=int,
     default=0,
-    help='set filetype to intel hex format or raw binary.')
+    help='Set filetype to intel hex format or raw binary.')
 
 @click.option(
     '--port',

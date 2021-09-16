@@ -1148,6 +1148,7 @@ class nxpprog:
         self.total_length = image_len
         # pad to a multiple of ram_block size with 0xff
         pad_count_rem = image_len % ram_block
+        pad_count = 0
         if pad_count_rem != 0:
             pad_count = ram_block - pad_count_rem
             image += self.bytestr(0xff, pad_count)

@@ -62,57 +62,28 @@ INVALID_STOP_BIT = 18
 CODE_READ_PROTECTION_ENABLED = 19
 
 # flash sector sizes for lpc23xx/lpc24xx/lpc214x processors
-flash_sector_lpc23xx = (
-                        4, 4, 4, 4, 4, 4, 4, 4,
-                        32, 32, 32, 32, 32, 32, 32,
-                        32, 32, 32, 32, 32, 32, 32,
-                        4, 4, 4, 4, 4, 4
-                       )
+flash_sector_lpc23xx = (4, 4, 4, 4, 4, 4, 4, 4, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 4, 4, 4, 4, 4, 4)
 
 # flash sector sizes for 64k lpc21xx processors (without bootsector)
-flash_sector_lpc21xx_64 = (
-                            8, 8, 8, 8, 8, 8, 8, 8
-                           )
+flash_sector_lpc21xx_64 = (8, 8, 8, 8, 8, 8, 8, 8)
 
 # flash sector sizes for 128k lpc21xx processors (without bootsector)
-flash_sector_lpc21xx_128 = (
-                            8, 8, 8, 8, 8, 8, 8, 8,
-                            8, 8, 8, 8, 8, 8, 8
-                           )
+flash_sector_lpc21xx_128 = (8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8)
 
 # flash sector sizes for 256k lpc21xx processors (without bootsector)
-flash_sector_lpc21xx_256 = (
-                            8, 8, 8, 8, 8, 8, 8, 8,
-                            64, 64,
-                            8, 8, 8, 8, 8, 8, 8,
-                           )
+flash_sector_lpc21xx_256 = (8, 8, 8, 8, 8, 8, 8, 8, 64, 64, 8, 8, 8, 8, 8, 8, 8, )
 
 # flash sector sizes for lpc17xx processors
-flash_sector_lpc17xx = (
-                        4, 4, 4, 4, 4, 4, 4, 4,
-                        4, 4, 4, 4, 4, 4, 4, 4,
-                        32, 32, 32, 32, 32, 32, 32,
-                        32, 32, 32, 32, 32, 32, 32,
-                       )
+flash_sector_lpc17xx = (4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 ,32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,)
 
 # flash sector sizes for lpc40xx processors
-flash_sector_lpc40xx = (
-                        4, 4, 4, 4, 4, 4, 4, 4,
-                        4, 4, 4, 4, 4, 4, 4, 4,
-                        32, 32, 32, 32, 32, 32, 32,
-                        32, 32, 32, 32, 32, 32, 32,
-                       )
+flash_sector_lpc40xx = (4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,)
 
 # flash sector sizes for lpc11xx processors
-flash_sector_lpc11xx = (
-        4, 4, 4, 4, 4, 4, 4, 4,
-        )
+flash_sector_lpc11xx = (4, 4, 4, 4, 4, 4, 4, 4,)
 
 # flash sector sizes for lpc18xx processors
-flash_sector_lpc18xx = (
-                        8, 8, 8, 8, 8, 8, 8, 8,
-                        64, 64, 64, 64, 64, 64, 64,
-                       )
+flash_sector_lpc18xx = (8, 8, 8, 8, 8, 8, 8, 8, 64, 64, 64, 64, 64, 64, 64,)
 
 
 flash_prog_buffer_base_default = 0x40001000
@@ -564,34 +535,34 @@ def panic(str):
     sys.exit(1)
 
 
-def syntax():
-    panic(
-"""\
-{0} <serial device> <image_file> : program image file to processor.
-{0} --udp <ip address> <image_file> : program processor using Ethernet.
-{0} --start=<addr> <serial device> : start the device at <addr>.
-{0} --read=<file> --addr=<address> --len=<length> <serial device>:
-            read length bytes from address and dump them to a file.
-{0} --serialnumber <serial device> : get the device serial number
-{0} --list : list supported processors.
-options:
-    --cpu=<cpu> : set the cpu type.
-    --oscfreq=<freq> : set the oscillator frequency.
-    --baud=<baud> : set the baud rate.
-    --xonxoff : enable xonxoff flow control.
-    --control : use RTS and DTR to control reset and int0.
-    --addr=<image start address> : set the base address for the image.
-    --verbose : enable debug message output.
-    --verify : read the device after programming.
-    --verifyonly : don't program, just verify.
-    --eraseonly : don't program, just erase. Implies --eraseall.
-    --eraseall : erase all flash not just the area written to.
-    --blankcheck : don't program, just check that the flash is blank.
-    --filetype=[ihex|bin] : set filetype to intel hex format or raw binary.
-    --bank=[0|1] : select bank for devices with flash banks.
-    --port=<udp port> : UDP port number to use (default 41825).
-    --mac=<mac address> : MAC address to associate IP address with.\
-""".format(os.path.basename(sys.argv[0])))
+# def syntax():
+#     panic(
+#     """\
+#     {0} <serial device> <image_file> : program image file to processor.
+#     {0} --udp <ip address> <image_file> : program processor using Ethernet.
+#     {0} --start=<addr> <serial device> : start the device at <addr>.
+#     {0} --read=<file> --addr=<address> --len=<length> <serial device>:
+#                 read length bytes from address and dump them to a file.
+#     {0} --serialnumber <serial device> : get the device serial number
+#     {0} --list : list supported processors.
+#     options:
+#         --cpu=<cpu> : set the cpu type.
+#         --oscfreq=<freq> : set the oscillator frequency.
+#         --baud=<baud> : set the baud rate.
+#         --xonxoff : enable xonxoff flow control.
+#         --control : use RTS and DTR to control reset and int0.
+#         --addr=<image start address> : set the base address for the image.
+#         --verbose : enable debug message output.
+#         --verify : read the device after programming.
+#         --verifyonly : don't program, just verify.
+#         --eraseonly : don't program, just erase. Implies --eraseall.
+#         --eraseall : erase all flash not just the area written to.
+#         --blankcheck : don't program, just check that the flash is blank.
+#         --filetype=[ihex|bin] : set filetype to intel hex format or raw binary.
+#         --bank=[0|1] : select bank for devices with flash banks.
+#         --port=<udp port> : UDP port number to use (default 41825).
+#         --mac=<mac address> : MAC address to associate IP address with.\
+#     """.format(os.path.basename(sys.argv[0])))
 
 class SerialDevice(object):
     def __init__(self, device, baud, xonxoff=False, control=False):
@@ -704,16 +675,12 @@ class UdpDevice(object):
         if self._eth_addr:
             import subprocess
             # Try add host to ARP table
-            obj = subprocess.Popen(['arp', '-s', self._inet_addr, self._eth_addr],
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                   shell=True)
+            obj = subprocess.Popen(['arp', '-s', self._inet_addr, self._eth_addr], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             res = obj.communicate()
             stdout_text = res[0].decode('ascii', 'ignore') if res[0] else ""
             stderr_text = res[1].decode('ascii', 'ignore') if res[1] else ""
             if obj.returncode or stderr_text:
-                panic("Failed to register IP address " +
-                      "(Administrative privileges may be required)\r\n" +
-                      stderr_text.replace('\r', '').replace('\n', ''))
+                panic("Failed to register IP address " + "(Administrative privileges may be required)\r\n" + stderr_text.replace('\r', '').replace('\n', ''))
 
         self._sock.bind(('', self._udp_port))
 
@@ -792,12 +759,10 @@ class nxpprog:
                     self.cpu = dcpu
                     break
             if self.cpu == "autodetect":
-                panic("Cannot autodetect from device id %d(0x%x), set cpu name manually" %
-                        (devid, devid))
+                panic("Cannot autodetect from device id %d(0x%x), set cpu name manually" % (devid, devid))
 
         # unlock write commands
         self.isp_command("U 23130")
-
 
     def dev_write(self, data):
         self.device.write(data)
@@ -843,7 +808,6 @@ class nxpprog:
             errstr = error_desc[err] if err < len(error_desc) else ""
             panic("%s: %d - %s" % (str, err, errstr))
 
-
     def isp_command(self, cmd):
         retry = 3
         while retry > 0:
@@ -862,7 +826,6 @@ class nxpprog:
         self.errexit("'%s' error" % cmd, status)
 
         return status
-
 
     def sync(self, osc):
         self.dev_write(b'?')
@@ -920,7 +883,6 @@ class nxpprog:
             self.errexit("'A 0' echo disable failed", s)
             panic("Echo disable failed")
 
-
     def sum(self, data):
         s = 0
         if isinstance(data, str):
@@ -930,7 +892,6 @@ class nxpprog:
             for i in data:
                 s += i
         return s
-
 
     def write_ram_block(self, addr, data):
         data_len = len(data)
@@ -987,7 +948,6 @@ class nxpprog:
 
         # only return real data
         return decoded[0:linelen]
-
 
     def read_block(self, addr, data_len, fd=None):
         self.isp_command("R %d %d" % ( addr, data_len ))
@@ -1048,7 +1008,6 @@ class nxpprog:
 
             addr += a_block_size
 
-
     def find_flash_sector(self, addr):
         table = self.get_cpu_parm("flash_sector")
         flash_base_addr = self.get_cpu_parm("flash_bank_addr", 0)
@@ -1063,13 +1022,11 @@ class nxpprog:
             faddr = n_faddr
         return -1
 
-
     def bytestr(self, ch, count):
         data = b''
         for i in range(0, count):
             data += bytes([ch])
         return data
-
 
     def insert_csum(self, orig_image):
         # make this a valid image by inserting a checksum in the correct place
@@ -1090,8 +1047,7 @@ class nxpprog:
         csum %= self.U32_MOD
         csum = self.U32_MOD - csum
 
-        logging.debug("Inserting intvec checksum 0x%08x in image at offset %d" %
-                (csum, valid_image_csum_vec))
+        logging.debug("Inserting intvec checksum 0x%08x in image at offset %d" % (csum, valid_image_csum_vec))
 
         intvecs_list[valid_image_csum_vec] = csum
 
@@ -1103,19 +1059,16 @@ class nxpprog:
 
         return image
 
-
     def prepare_flash_sectors(self, start_sector, end_sector):
         if self.sector_commands_need_bank:
             self.isp_command("P %d %d 0" % (start_sector, end_sector))
         else:
             self.isp_command("P %d %d" % (start_sector, end_sector))
 
-
     def erase_sectors(self, start_sector, end_sector, verify=False):
         self.prepare_flash_sectors(start_sector, end_sector)
 
-        logging.info("Erasing flash sectors %d-%d" %
-            (start_sector, end_sector))
+        logging.info("Erasing flash sectors %d-%d" % (start_sector, end_sector))
 
         if self.sector_commands_need_bank:
             self.isp_command("E %d %d 0" % (start_sector, end_sector))
@@ -1123,10 +1076,8 @@ class nxpprog:
             self.isp_command("E %d %d" % (start_sector, end_sector))
 
         if verify:
-            logging.info("Blank checking sectors %d-%d" %
-                (start_sector, end_sector))
+            logging.info("Blank checking sectors %d-%d" % (start_sector, end_sector))
             self.blank_check_sectors(start_sector, end_sector)
-
 
     def blank_check_sectors(self, start_sector, end_sector):
         global panic
@@ -1147,13 +1098,11 @@ class nxpprog:
                 self.errexit("'%s' error" % cmd, status)
         panic = old_panic
 
-
     def erase_flash_range(self, start_addr, end_addr, verify=False):
         start_sector = self.find_flash_sector(start_addr)
         end_sector = self.find_flash_sector(end_addr)
 
         self.erase_sectors(start_sector, end_sector, verify)
-
 
     def get_cpu_parm(self, key, default=None):
         ccpu_parms = cpu_parms.get(self.cpu)
@@ -1167,33 +1116,25 @@ class nxpprog:
         else:
             panic("No value for required cpu parameter %s" % key)
 
-
     def erase_all(self, verify=False):
-        end_sector = self.get_cpu_parm("flash_sector_count",
-            len(self.get_cpu_parm("flash_sector"))) - 1
+        end_sector = self.get_cpu_parm("flash_sector_count", len(self.get_cpu_parm("flash_sector"))) - 1
 
         self.erase_sectors(0, end_sector, verify)
 
-
     def blank_check_all(self):
-        end_sector = self.get_cpu_parm("flash_sector_count",
-            len(self.get_cpu_parm("flash_sector"))) - 1
+        end_sector = self.get_cpu_parm("flash_sector_count", len(self.get_cpu_parm("flash_sector"))) - 1
 
         self.blank_check_sectors(0, end_sector)
 
-
-    def prog_image(self, image, flash_addr_base=0,
-            erase_all=False, verify=False):
+    def prog_image(self, image, flash_addr_base=0, erase_all=False, verify=False):
         global panic
         success = True
 
         # the base address of the ram block to be written to flash
-        ram_addr = self.get_cpu_parm("flash_prog_buffer_base",
-                flash_prog_buffer_base_default)
+        ram_addr = self.get_cpu_parm("flash_prog_buffer_base", flash_prog_buffer_base_default)
         # the size of the ram block to be written to flash
         # 256 | 512 | 1024 | 4096
-        ram_block = self.get_cpu_parm("flash_prog_buffer_size",
-                flash_prog_buffer_size_default)
+        ram_block = self.get_cpu_parm("flash_prog_buffer_size", flash_prog_buffer_size_default)
 
         # if the image starts at the start of a flash bank then make it bootable
         # by inserting a checksum at the right place in the vector table
@@ -1235,8 +1176,7 @@ class nxpprog:
 
             self.current_address = flash_addr_start
 
-            self.write_ram_data(ram_addr,
-                    image[image_index: image_index + a_ram_block], image_len)
+            self.write_ram_data(ram_addr, image[image_index: image_index + a_ram_block], image_len)
 
             s_flash_sector = self.find_flash_sector(flash_addr_start)
 
@@ -1245,15 +1185,13 @@ class nxpprog:
             self.prepare_flash_sectors(s_flash_sector, e_flash_sector)
 
             # copy ram to flash
-            self.isp_command("C %d %d %d" %
-                    (flash_addr_start, ram_addr, a_ram_block))
+            self.isp_command("C %d %d %d" % (flash_addr_start, ram_addr, a_ram_block))
 
             # optionally compare ram and flash
             if verify:
                 old_panic = panic
                 panic = log
-                result = self.isp_command("M %d %d %d" %
-                                          (flash_addr_start, ram_addr, a_ram_block))
+                result = self.isp_command("M %d %d %d" % (flash_addr_start, ram_addr, a_ram_block))
                 panic = old_panic
                 if result == str(CMD_SUCCESS):
                     pass
@@ -1268,7 +1206,6 @@ class nxpprog:
         sys.stdout.write('\r\n\r\n')
         sys.stdout.flush()
         return success
-
 
     def verify_image(self, flash_addr_base, image):
         success = True
@@ -1297,8 +1234,7 @@ class nxpprog:
             end = end_addr if end_of_sector > end_addr else end_of_sector
             length = 4 * ((end - start) // 4)
 
-            logging.info("Verify sector %i: Reading %d bytes from 0x%x" %
-                (sector, length, start))
+            logging.info("Verify sector %i: Reading %d bytes from 0x%x" % (sector, length, start))
             data = self.read_block(start, length)
             if isinstance(image[0], int):
                 data = [ord(x) for x in data]
@@ -1308,8 +1244,7 @@ class nxpprog:
 
             for (i, (x, y)) in enumerate(zip(data, image[index:index+(end-start)])):
                 if x != y:
-                    logging.error("Verify failed! content differ at location \
-                        0x%x" % (faddr + i))
+                    logging.error("Verify failed! content differ at location 0x%x" % (faddr + i))
                     success = False
                     break
 
@@ -1317,7 +1252,6 @@ class nxpprog:
             sector = sector + 1
 
         return success
-
 
     def start(self, addr=0):
         mode = self.get_cpu_parm("cpu_type", "arm")
@@ -1331,7 +1265,6 @@ class nxpprog:
 
         self.isp_command("G %d %s" % (addr, m))
 
-
     def select_bank(self, bank):
         status = self.isp_command("S %d" % bank)
 
@@ -1339,7 +1272,6 @@ class nxpprog:
             return 1
 
         return 0
-
 
     def get_devid(self):
         self.isp_command("J")
@@ -1352,7 +1284,6 @@ class nxpprog:
         else:
             ret = int(id1)
         return ret
-
 
     def get_serial_number(self):
         self.isp_command("N")

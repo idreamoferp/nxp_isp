@@ -37,7 +37,6 @@ import click
 import ihex
 
 import serial
-import serial.serialutil
 import serial.tools.list_ports as port_list
 
 CMD_SUCCESS = 0

@@ -534,36 +534,6 @@ def panic(str):
         prog.device.close()
     sys.exit(1)
 
-
-# def syntax():
-#     panic(
-#     """\
-#     {0} <serial device> <image_file> : program image file to processor.
-#     {0} --udp <ip address> <image_file> : program processor using Ethernet.
-#     {0} --start=<addr> <serial device> : start the device at <addr>.
-#     {0} --read=<file> --addr=<address> --len=<length> <serial device>:
-#                 read length bytes from address and dump them to a file.
-#     {0} --serialnumber <serial device> : get the device serial number
-#     {0} --list : list supported processors.
-#     options:
-#         --cpu=<cpu> : set the cpu type.
-#         --oscfreq=<freq> : set the oscillator frequency.
-#         --baud=<baud> : set the baud rate.
-#         --xonxoff : enable xonxoff flow control.
-#         --control : use RTS and DTR to control reset and int0.
-#         --addr=<image start address> : set the base address for the image.
-#         --verbose : enable debug message output.
-#         --verify : read the device after programming.
-#         --verifyonly : don't program, just verify.
-#         --eraseonly : don't program, just erase. Implies --eraseall.
-#         --eraseall : erase all flash not just the area written to.
-#         --blankcheck : don't program, just check that the flash is blank.
-#         --filetype=[ihex|bin] : set filetype to intel hex format or raw binary.
-#         --bank=[0|1] : select bank for devices with flash banks.
-#         --port=<udp port> : UDP port number to use (default 41825).
-#         --mac=<mac address> : MAC address to associate IP address with.\
-#     """.format(os.path.basename(sys.argv[0])))
-
 class SerialDevice(object):
     def __init__(self, device, baud, xonxoff=False, control=False):
         # Create the Serial object without port to avoid automatic opening

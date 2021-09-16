@@ -833,7 +833,7 @@ class nxpprog:
         if not s:
             panic("Sync timeout")
         logging.debug("initial sync = %s" % s)
-        if s != self.sync_str:
+        if self.sync_str not in s:
             panic("No sync string")
 
         self.dev_writeln(self.sync_str)

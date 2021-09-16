@@ -437,16 +437,16 @@ class AutoLPCPortFinder:
     def port_write_and_verify(self, port, payload, error_message="", debug_message=""):
         bytes_sent = port.write(bytearray(payload))
         if bytes_sent != len(payload):
-            log(error_message)
+            logging.error(error_message)
         else:
-            log(debug_message)
+            logging.debug(debug_message)
 
 
     def port_read(self, port, number_of_bytes):
         return bytearray(port.read(number_of_bytes))
 
     def find_lpc_port(self):
-        log('Scanning ports for NXP LPC devices...')
+        logging.info('Scanning ports for NXP LPC devices...')
         if self.device:
             serial_device_list = [
                 {
@@ -504,12 +504,6 @@ class AutoLPCPortFinder:
             response = self.port_read(port, 17)
             return len(response) >= 4 and response[-4:] == LPC_CHAR['OK']
         return False
-
-
-def log(str):
-    sys.stderr.write("%s\n" % str)
-    sys.stderr.flush()
-
 
 def dump(name, str):
     logging.info("%s:\n" % name)
@@ -627,7 +621,6 @@ class SerialDevice(object):
           self._serial.inter_byte_timeout = 1
           self._serial._reconfigure_port(force_update=True)
           self._serial.close()
-
 
 class UdpDevice(object):
     def __init__(self, address):
@@ -1045,9 +1038,6 @@ class nxpprog:
             self.blank_check_sectors(start_sector, end_sector)
 
     def blank_check_sectors(self, start_sector, end_sector):
-        global panic
-        old_panic = panic
-        panic = log
         for i in range(start_sector, end_sector+1):
             if self.sector_commands_need_bank:
                 cmd = ("I %d %d 0" % (i, i))
@@ -1061,7 +1051,6 @@ class nxpprog:
                 self.dev_readline() # content
             else:
                 self.errexit("'%s' error" % cmd, status)
-        panic = old_panic
 
     def erase_flash_range(self, start_addr, end_addr, verify=False):
         start_sector = self.find_flash_sector(start_addr)
@@ -1155,10 +1144,7 @@ class nxpprog:
 
             # optionally compare ram and flash
             if verify:
-                old_panic = panic
-                panic = log
                 result = self.isp_command("M %d %d %d" % (flash_addr_start, ram_addr, a_ram_block))
-                panic = old_panic
                 if result == str(CMD_SUCCESS):
                     pass
                 elif result == str(COMPARE_ERROR):

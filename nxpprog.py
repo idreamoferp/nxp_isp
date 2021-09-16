@@ -28,7 +28,6 @@ import os
 import sys
 import struct
 import logging
-import signal
 import socket
 import time
 import ihex

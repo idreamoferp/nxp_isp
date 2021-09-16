@@ -120,6 +120,13 @@ flash_prog_buffer_size_default = 4096
 
 # cpu parameter table
 cpu_parms = {
+    
+        "lpc11C1" : {
+            "flash_sector" : flash_sector_lpc11xx,
+            "flash_prog_buffer_base" : 0x10000300,
+            "devid": 339742763,
+            "flash_prog_buffer_size" : 1024
+        },
         # 128k flash
         "lpc2364" : {
             "flash_sector" : flash_sector_lpc23xx,

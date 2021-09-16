@@ -505,18 +505,6 @@ class AutoLPCPortFinder:
             return len(response) >= 4 and response[-4:] == LPC_CHAR['OK']
         return False
 
-def dump(name, str):
-    logging.info("%s:\n" % name)
-    ct = 0
-    for i in str:
-        logging.info("%x, " % ord(i))
-        ct += 1
-        if ct == 4:
-            ct = 0
-            logging.info("\n")
-    logging.info("\n")
-
-
 def panic(str):
     logging.error(str)
     if prog:
@@ -659,7 +647,6 @@ class UdpDevice(object):
             self._sock.timeout = ot
 
         return line.decode("UTF-8", "ignore").replace('\r','').replace('\n','')
-
 
 class nxpprog:
     def __init__(self, cpu, device, baud, osc_freq, xonxoff=False, control=False, address=None, verify=False):
@@ -1244,7 +1231,6 @@ class nxpprog:
         id3 = self.dev_readline(.2)
         id4 = self.dev_readline(.2)
         return ' '.join([id1, id2, id3, id4])
-
 
 def main(argv=None, args={}):
     global prog

@@ -509,7 +509,7 @@ def panic(str):
     logging.error(str)
     if prog:
         prog.device.close()
-    sys.exit(1)
+    # sys.exit(1)
 
 class SerialDevice(object):
     def __init__(self, device, baud, xonxoff=False, control=False):

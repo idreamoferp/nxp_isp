@@ -600,6 +600,7 @@ class UdpDevice(object):
 class nxpprog:
     def __init__(self, cpu, device, baud, osc_freq, xonxoff=False, control=False, address=None, verify=False):
         self.logger = logging.getLogger(f"NXP ISP {device}")
+        self.logger.debug("Starting INIT.")
         self.echo_on = True
         self.verify = verify
         self.OK = 'OK'
@@ -631,6 +632,7 @@ class nxpprog:
             self.sector_commands_need_bank = True
         self.current_address = 0
         self.total_length = 0
+        self.logger.info("INIT complete.")
         pass
 
     def connection_init(self, osc_freq):

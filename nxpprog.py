@@ -631,6 +631,7 @@ class nxpprog:
             self.sector_commands_need_bank = True
         self.current_address = 0
         self.total_length = 0
+        pass
 
     def connection_init(self, osc_freq):
         self.sync(osc_freq)
@@ -639,7 +640,7 @@ class nxpprog:
             self.autodetect_chip()
         
         self.unlock_write()
-        
+        pass
             
     def autodetect_chip(self):
         self.logger.debug("Autodetecting chip")
@@ -717,23 +718,23 @@ class nxpprog:
             errstr = error_desc[err] if err < len(error_desc) else ""
             panic("%s: %d - %s" % (str, err, errstr))
 
-    def isp_command(self, cmd):
-        retry = 3
+    def isp_command(self, cmd, retry=3):
+        
         while retry > 0:
             retry -= 1
+            self.logger.debug(f"sending ISP - {cmd}")
             self.dev_writeln(cmd)
 
             # throw away echo data
             if self.echo_on:
                 echo = self.dev_readline()
                 if self.verify and echo != cmd:
-                    logging.debug('Invalid echo')
+                    self.logger.debug('ISP command Invalid echo')
 
             status = self.dev_readline()
+            self.logger.debug(f"ISP command status : {status[int(status)]}")
             if status:
                 break
-        self.errexit("'%s' error" % cmd, status)
-
         return status
 
     def sync(self, osc):

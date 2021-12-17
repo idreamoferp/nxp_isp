@@ -431,27 +431,28 @@ def unichar(i):
 spinner_starting_point = 0
 
 def progress_bar(bar_length, current_block, total_blocks):
-  global spinner_starting_point
-  bar_len = bar_length
-  filled_len = int(round(bar_len * (current_block + 1) / float(total_blocks)))
-
-  percents = round(100.0 * (current_block + 1) / float(total_blocks), 1)
-
-  bar = "█" * (filled_len - 1)
-  bar = bar + "░" * (bar_len - filled_len)
-
-  suffix = "Block # 0x{:X} of 0x{:X}".format(
-      current_block + 1, int(total_blocks))
-
-  sys.stdout.write(
-      '\r▕%s▏ %s%% %s %s ' %
-      (bar, percents,
-       selected_animation[spinner_starting_point % len(selected_animation)],
-       suffix))
-
-  spinner_starting_point += 1
-
-  sys.stdout.flush()
+    #   global spinner_starting_point
+    #   bar_len = bar_length
+    #   filled_len = int(round(bar_len * (current_block + 1) / float(total_blocks)))
+    
+    #   percents = round(100.0 * (current_block + 1) / float(total_blocks), 1)
+    
+    #   bar = "█" * (filled_len - 1)
+    #   bar = bar + "░" * (bar_len - filled_len)
+    
+    #   suffix = "Block # 0x{:X} of 0x{:X}".format(
+    #       current_block + 1, int(total_blocks))
+    
+    #   sys.stdout.write(
+    #       '\r▕%s▏ %s%% %s %s ' %
+    #       (bar, percents,
+    #       selected_animation[spinner_starting_point % len(selected_animation)],
+    #       suffix))
+    
+    #   spinner_starting_point += 1
+    
+    #   sys.stdout.flush()
+    pass
 
 def panic(str):
     logging.error(str)
@@ -598,6 +599,7 @@ class UdpDevice(object):
 
 class nxpprog:
     def __init__(self, cpu, device, baud, osc_freq, xonxoff=False, control=False, address=None, verify=False):
+        self.logger = logging.getLogger(f"NXP ISP {device}")
         self.echo_on = True
         self.verify = verify
         self.OK = 'OK'
@@ -611,7 +613,7 @@ class nxpprog:
         self.uu_line_size = 45
         # uuencoded block length
         self.uu_block_size = self.uu_line_size * 20
-
+        self.baud = baud
         if address:
             self.device = UdpDevice(address)
         else:
@@ -634,28 +636,42 @@ class nxpprog:
         self.sync(osc_freq)
 
         if self.cpu == "autodetect":
-            devid = self.get_devid()
-            for dcpu in cpu_parms.keys():
-                cpu_devid = cpu_parms[dcpu].get("devid")
-                if not cpu_devid:
-                    continue
+            self.autodetect_chip()
+        
+        self.unlock_write()
+        
+            
+    def autodetect_chip(self):
+        self.logger.debug("Autodetecting chip")
+        devid = self.get_devid()
+        for dcpu in cpu_parms.keys():
+            cpu_devid = cpu_parms[dcpu].get("devid")
+            if not cpu_devid:
+                continue
 
-                # mask devid word1
-                devid_word1_mask = cpu_parms[dcpu].get("devid_word1_mask")
-                if devid_word1_mask and isinstance(devid, tuple) and devid[0] == cpu_devid[0] and (devid[1] & devid_word1_mask) == (cpu_devid[1] & devid_word1_mask):
-                    logging.debug("Detected %s" % dcpu)
-                    self.cpu = dcpu
-                    break
+            # mask devid word1
+            devid_word1_mask = cpu_parms[dcpu].get("devid_word1_mask")
+            if devid_word1_mask and isinstance(devid, tuple) and devid[0] == cpu_devid[0] and (devid[1] & devid_word1_mask) == (cpu_devid[1] & devid_word1_mask):
+                self.logger.debug("Detected %s" % dcpu)
+                self.cpu = dcpu
+                break
 
-                if devid == cpu_devid:
-                    logging.debug("Detected %s" % dcpu)
-                    self.cpu = dcpu
-                    break
-            if self.cpu == "autodetect":
-                panic("Cannot autodetect from device id %d(0x%x), set cpu name manually" % (devid, devid))
-
+            if devid == cpu_devid:
+                self.logger.debug("Detected %s" % dcpu)
+                self.cpu = dcpu
+                break
+            
+        if self.cpu == "autodetect":
+            raise RuntimeError("Cannot autodetect from device id %d(0x%x), set cpu name manually" % (devid, devid))
+        
+        return True
+        
+    def unlock_write(self):
+        self.logger.debug("Unlocking chip write protect.")
         # unlock write commands
         self.isp_command("U 23130")
+        self.logger.info("unlocked chip write protect.")
+        return True
 
     def dev_write(self, data):
         self.device.write(data)
@@ -721,6 +737,7 @@ class nxpprog:
         return status
 
     def sync(self, osc):
+        self.logger.debug("Start autobaud sync")
         #start sync by sending chip question mark to set autobaud, should receive Syncronized as response.
         self.dev_write(b'?')
         s = self.dev_readline()
@@ -746,6 +763,9 @@ class nxpprog:
             logging.debug("echo sync = %s" % s)
             raise RuntimeError("Chip did not accept sync request.")
 
+        self.logger.info(f"Autobaud sync at {self.baud}")
+        
+        self.logger.debug("Start OSC setting")
         # set the oscillator frequency
         self.dev_writeln('%d' % osc)
         if self.echo_on:
@@ -762,10 +782,13 @@ class nxpprog:
             else:
                 raise RuntimeError(f"Chip did not accept OCS command.\n\r{status[s]}")
         
+        self.logger.info(f"OSC set at {osc}")
+        
         self.set_echo(False)
         return True
     
     def set_echo(self, echo):
+        self.logger.debug(f"Setting echo {echo}")
         # disable echo
         self.dev_writeln('A 0')
         if self.echo_on:
@@ -781,6 +804,7 @@ class nxpprog:
         else:
             raise RuntimeError("Echo disable failed")
         
+        self.logger.info(f"Echo set {echo}")
         return True
     
     def sum(self, data):

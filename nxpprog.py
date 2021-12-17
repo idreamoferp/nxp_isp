@@ -733,7 +733,6 @@ class nxpprog:
                     self.logger.debug('ISP command Invalid echo')
 
             status = self.dev_readline()
-            self.logger.debug(f"ISP command status : {status[int(status)]}")
             if status:
                 break
         return status
@@ -989,6 +988,7 @@ class nxpprog:
         return image
 
     def prepare_flash_sectors(self, start_sector, end_sector):
+        self.logger.debug(f"Preparing sectors {start_sector} - {end_sector}")
         if self.sector_commands_need_bank:
             self.isp_command("P %d %d 0" % (start_sector, end_sector))
         else:
@@ -997,7 +997,7 @@ class nxpprog:
     def erase_sectors(self, start_sector, end_sector, verify=False):
         self.prepare_flash_sectors(start_sector, end_sector)
 
-        logging.info("Erasing flash sectors %d-%d" % (start_sector, end_sector))
+        self.logger.info("Erasing flash sectors %d-%d" % (start_sector, end_sector))
 
         if self.sector_commands_need_bank:
             self.isp_command("E %d %d 0" % (start_sector, end_sector))
@@ -1005,23 +1005,28 @@ class nxpprog:
             self.isp_command("E %d %d" % (start_sector, end_sector))
 
         if verify:
-            logging.info("Blank checking sectors %d-%d" % (start_sector, end_sector))
             self.blank_check_sectors(start_sector, end_sector)
 
     def blank_check_sectors(self, start_sector, end_sector):
+        self.logger.debug("Blank checking sectors %d-%d" % (start_sector, end_sector))
+        
         for i in range(start_sector, end_sector+1):
+            offset = 0
             if self.sector_commands_need_bank:
                 cmd = ("I %d %d 0" % (i, i))
             else:
                 cmd = ("I %d %d" % (i, i))
+            
             result = self.isp_command(cmd)
             if result == str(CMD_SUCCESS):
                 pass
             elif result == str(SECTOR_NOT_BLANK):
-                self.dev_readline() # offset
+                offset = self.dev_readline() # offset
                 self.dev_readline() # content
             else:
-                self.errexit("'%s' error" % cmd, status)
+                raise RuntimeError(f"Blank check failed at offset {offset}")
+        
+        self.logger.info("Sectors %d-%d are blank" % (start_sector, end_sector))
 
     def erase_flash_range(self, start_addr, end_addr, verify=False):
         start_sector = self.find_flash_sector(start_addr)
@@ -1082,15 +1087,14 @@ class nxpprog:
             image += self.bytestr(0xff, pad_count)
             image_len += pad_count
             self.logger.debug("Padding image with %d bytes" % pad_count)
-
+        
+        #erase chip if needed
         if erase_all:
             self.erase_all(verify)
         else:
             self.erase_flash_range(flash_addr_base, flash_addr_base + image_len - 1, verify)
-
-        sys.stdout.write('\r\n')
-        sys.stdout.flush()
-
+        
+        #send image to chip.
         for image_index in range(0, image_len, ram_block):
             a_ram_block = image_len - image_index
             if a_ram_block > ram_block:
@@ -1099,8 +1103,7 @@ class nxpprog:
             flash_addr_start = image_index + flash_addr_base
             flash_addr_end = flash_addr_start + a_ram_block - 1
 
-            logging.debug("Writing %d bytes to 0x%x" %
-                (a_ram_block, flash_addr_start))
+            self.logger.debug("Writing %d bytes to ram" % (a_ram_block))
 
             self.current_address = flash_addr_start
 
@@ -1113,8 +1116,10 @@ class nxpprog:
             self.prepare_flash_sectors(s_flash_sector, e_flash_sector)
 
             # copy ram to flash
+            self.logger.debug(f"Copy address {ram_addr} to 0x{flash_addr_start:02x}")
             self.isp_command("C %d %d %d" % (flash_addr_start, ram_addr, a_ram_block))
-
+            self.logger.info("Wrote %d bytes to 0x%x" % (a_ram_block, flash_addr_start))
+            
             # optionally compare ram and flash
             if verify:
                 result = self.isp_command("M %d %d %d" % (flash_addr_start, ram_addr, a_ram_block))
@@ -1124,14 +1129,14 @@ class nxpprog:
                     self.dev_readline() # offset
                     success = False
                 else:
-                    self.errexit("'%s' '%s' error" % (cmd, status))
+                    raise RuntimeError("Flash address {flash_addr_start} did not verify to ram.")
 
-        progress_bar(30, image_len - 1, image_len)
-
-        sys.stdout.write('\r\n\r\n')
-        sys.stdout.flush()
+            self.progress(image_len - 1, image_len)
         return success
-
+    
+    def progress(self, total, current):
+        pass
+    
     def verify_image(self, flash_addr_base, image):
         success = True
 
@@ -1218,183 +1223,3 @@ class nxpprog:
         id4 = self.dev_readline(.2)
         return ' '.join([id1, id2, id3, id4])
 
-def main(argv=None, args={}):
-    global prog
-
-    # defaults
-    osc_freq = 16000 # kHz
-    baud = 115200
-    device = None
-    cpu = "autodetect"
-    filename = ""
-    flash_addr_base = 0
-    erase_all = False
-    erase_only = False
-    verbose = False
-    verify = False
-    verify_only = False
-    blank_check = False
-    xonxoff = False
-    start = False
-    control = False
-    filetype = "autodetect"
-    select_bank = False
-    read = False
-    readlen = 0
-    get_serial_number = False
-    udp = False
-    port = -1
-    mac = "" # "0C-1D-12-E0-1F-10"
-
-    if args['list']:
-        logging.info("Supported cpus:")
-        for val in sorted(cpu_parms.keys()):
-            logging.info(" %s" % val)
-        sys.exit(0)
-    if args['verbose']:
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    else:
-        logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    if args['binary']:
-        filename = args['binary']
-    if args['device']:
-        device = args['device']
-    if args['cpu']:
-        cpu = args['cpu']
-    if args['xonxoff']:
-        xonxoff = True
-    if args['osfreq']:
-        os_freq = args['osfreq']
-    if args['addr']:
-        addr = int(args['addr'], 0)
-    if args['baud']:
-        baud = args['baud']
-    if args['eraseall']:
-        erase_all = args['eraseall']
-    if args['eraseonly']:
-        erase_only = args['eraseonly']
-    if args['verify']:
-        verify = True
-    if args['verifyonly']:
-        verify = True
-        verify_only = True
-    if args['blankcheck']:
-        verify = True
-        blank_check = True
-    if args['control']:
-        control = True
-    if args['filetype']:
-        filetype = args['filetype']
-    if not (filetype == "bin" or filetype == "ihex" ):
-        panic("Invalid filetype: %s" % filetype)
-    if args['start']:
-        start = True
-        if args['addr']:
-            startaddr = int(args['addr'], 0)
-        else:
-            startaddr = 0
-    if args['bank']:
-        select_bank = True
-        bank = args['bank']
-    if args['read']:
-        read = True
-        readfile = a
-    if args['serialnumber']:
-        get_serial_number = True
-    if args['len']:
-        readlen = args['len']
-    if args['udp']:
-        udp = True
-    if args['port']:
-        port = int(args['port'])
-    if args['mac']:
-        mac = args['mac']
-
-    if cpu != "autodetect" and not cpu in cpu_parms:
-        panic("Unsupported cpu %s" % cpu)
-
-    port_finder = AutoLPCPortFinder()
-    if not device:
-        device = port_finder.find_lpc_port()
-        if device == None:
-            panic("Scanned serial ports, but could not find an LPC device. Are you sure it is connected to your computer?\n\n")
-
-    if udp:
-        if '.' in device:
-            if ':' in device:
-                device, port = tuple(device.split(':'))
-                port = int(port)
-                if port<0 or port>65535:
-                    panic("Bad port number: %d" % port)
-            parts = [int(x) for x in device.split('.')]
-            if len(parts)!=4 or min(parts)<0 or max(parts)>255:
-                panic("Bad IPv4-address: %s" % device)
-            device = '.'.join([str(x) for x in parts])
-        elif ':' in device:
-            # panic("Bad IPv6-address: %s" % device)
-            pass
-        else:
-            panic("Bad IP-address: %s" % device)
-        if port < 0:
-            port = 41825
-        if mac:
-            parts = [int(x, 16) for x in mac.split('-')]
-            if len(parts)!=6 or min(parts)<0 or max(parts)>255:
-                panic("Bad MAC-address: %s" % mac)
-            mac = '-'.join(['%02x'%x for x in parts])
-            logging.info("cpu=%s ip=%s:%d mac=%s" % (cpu, device, port, mac))
-        else:
-            logging.info("cpu=%s ip=%s:%d" % (cpu, device, port))
-    else:
-        logging.info("cpu=%s oscfreq=%d device=%s baud=%d" % (cpu, osc_freq, device, baud))
-
-    prog = nxpprog(cpu, device, baud, osc_freq, xonxoff, control, (device, port, mac) if udp else None, verify)
-
-    if erase_only:
-        prog.erase_all(verify)
-    elif blank_check:
-        prog.blank_check_all()
-    elif start:
-        prog.start(startaddr)
-    elif select_bank:
-        prog.select_bank(bank)
-    elif get_serial_number:
-        sn = prog.get_serial_number()
-        sys.stdout.write(sn)
-    elif read:
-        if not readlen:
-            panic("Read length is 0")
-        fd = open(readfile, "w")
-        prog.read_block(flash_addr_base, readlen, fd)
-        fd.close()
-    else:
-
-        if filetype == "autodetect":
-            filetype = "ihex" if filename.endswith('hex') else "bin"
-
-        if filetype == "ihex":
-            ih = ihex.ihex(filename)
-            (flash_addr_base, image) = ih.flatten()
-        else:
-            image = open(filename, "rb").read()
-
-        if not verify_only:
-            start = time.time()
-            success = prog.prog_image(image, flash_addr_base, erase_all, verify)
-            stop = time.time()
-            elapsed = stop - start
-            logging.info("Programmed %s in %.1f seconds" %
-                ("successfully" if success else "with errors", elapsed))
-
-        if verify:
-            start = time.time()
-            success = prog.verify_image(flash_addr_base, image)
-            stop = time.time()
-            elapsed = stop - start
-            logging.info("Verified %s in %.1f seconds" %
-                ("successfully" if success else "with errors", elapsed))
-
-        if not verify_only:
-            prog.start(flash_addr_base)
-
-    prog.device.close()

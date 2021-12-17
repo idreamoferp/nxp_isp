@@ -20,17 +20,15 @@ class ihex:
     TYPE_EXTENDED_LINEAR_ADDR = 4
     TYPE_START_LINEAR_ADDR = 5
 
-    def __init__(self, filename):
-        fd = open(filename, "r")
+    def __init__(self, hex_data):
+        #fd = open(filename, "r")
 
         self.data = []
-
         self.start_addr = None
-
         base_addr = 0
-
         line_no = 0
-        for line in fd:
+        
+        for line in hex_data:
             l = line.strip()
             line_no += 1
             if l[0] != ":":

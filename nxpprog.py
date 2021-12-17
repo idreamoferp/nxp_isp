@@ -673,7 +673,7 @@ class nxpprog:
         self.logger.debug("Unlocking chip write protect.")
         # unlock write commands
         self.isp_command("U 23130")
-        self.logger.info("unlocked chip write protect.")
+        self.logger.info("Unlocked chip write protect.")
         return True
 
     def dev_write(self, data):
@@ -724,7 +724,6 @@ class nxpprog:
         
         while retry > 0:
             retry -= 1
-            self.logger.debug(f"sending ISP - {cmd}")
             self.dev_writeln(cmd)
 
             # throw away echo data
@@ -956,11 +955,14 @@ class nxpprog:
         return data
 
     def insert_csum(self, orig_image):
+        self.logger.debug("Inserting checksum into vector table.")
+        
         # make this a valid image by inserting a checksum in the correct place
         intvecs = struct.unpack("<8I", orig_image[0:32])
 
         # default vector is 5: 0x14, new cortex cpus use 7: 0x1c
         valid_image_csum_vec = self.get_cpu_parm("csum_vec", 5)
+        
         # calculate the checksum over the interrupt vectors
         csum = 0
         intvecs_list = []
@@ -968,13 +970,12 @@ class nxpprog:
             intvecs_list.append(intvecs[vec])
             if valid_image_csum_vec == 5 or vec <= valid_image_csum_vec:
                 csum = csum + intvecs[vec]
+        
         # remove the value at the checksum location
         csum -= intvecs[valid_image_csum_vec]
 
         csum %= self.U32_MOD
         csum = self.U32_MOD - csum
-
-        logging.debug("Inserting intvec checksum 0x%08x in image at offset %d" % (csum, valid_image_csum_vec))
 
         intvecs_list[valid_image_csum_vec] = csum
 
@@ -983,7 +984,8 @@ class nxpprog:
             image += struct.pack("<I", vecval)
 
         image += orig_image[32:]
-
+        
+        self.logger.info("Inserted intvec checksum 0x%08x in image at offset %d" % (csum, valid_image_csum_vec))
         return image
 
     def prepare_flash_sectors(self, start_sector, end_sector):
@@ -1052,9 +1054,11 @@ class nxpprog:
     def prog_image(self, image, flash_addr_base=0, erase_all=False, verify=False):
         global panic
         success = True
-
+        
+        self.logger.debug("Programing chip.")
         # the base address of the ram block to be written to flash
         ram_addr = self.get_cpu_parm("flash_prog_buffer_base", flash_prog_buffer_base_default)
+        
         # the size of the ram block to be written to flash
         # 256 | 512 | 1024 | 4096
         ram_block = self.get_cpu_parm("flash_prog_buffer_size", flash_prog_buffer_size_default)
@@ -1066,9 +1070,10 @@ class nxpprog:
                 image = self.insert_csum(image)
         elif flash_addr_base in self.banks:
             image = self.insert_csum(image)
-
+        
         image_len = len(image)
         self.total_length = image_len
+        
         # pad to a multiple of ram_block size with 0xff
         pad_count_rem = image_len % ram_block
         pad_count = 0
@@ -1076,8 +1081,7 @@ class nxpprog:
             pad_count = ram_block - pad_count_rem
             image += self.bytestr(0xff, pad_count)
             image_len += pad_count
-
-        logging.debug("Padding with %d bytes" % pad_count)
+            self.logger.debug("Padding image with %d bytes" % pad_count)
 
         if erase_all:
             self.erase_all(verify)

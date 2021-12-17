@@ -56,6 +56,29 @@ INVALID_BAUD_RATE = 17
 INVALID_STOP_BIT = 18
 CODE_READ_PROTECTION_ENABLED = 19
 
+status = {
+        "0":(0,"CMD_SUCCESS","Command is executed successfully. Sent by ISP handler only when command given by the host has been completely and successfully executed."),
+        "1":(1,"INVALID_COMMAND", "Invalid command."),
+        "2":(2,"SRC_ADDR_ERROR", "Source address is not on word boundary."),
+        "3":(3,"DST_ADDR_ERROR", "Destination address is not on a correct boundary."),
+        "4":(4,"SRC_ADDR_NOT_MAPPED", "Source address is not mapped in the memory map. Count value is taken in to consideration where applicable."),
+        "5":(5,"DST_ADDR_NOT_MAPPED", "Destination address is not mapped in the memory map. Count value is taken in to consideration where applicable."),
+        "6":(6,"COUNT_ERROR", "Byte count is not multiple of 4 or is not a permitted value."),
+        "7":(7,"INVALID_SECTOR", "Sector number is invalid or end sector number is greater than start sector number."),
+        "8":(8,"SECTOR_NOT_BLANK", "Sector is not blank."),
+        "9":(9,"SECTOR_NOT_PREPARED_FOR_WRITE_OPERATION", "Command to prepare sector for write operation was not executed."),
+        "10":(10,"COMPARE_ERROR", "Source and destination data not equal."),
+        "11":(11,"BUSY", "Flash programming hardware interface is busy."),
+        "12":(12,"PARAM_ERROR", "Insufficient number of parameters or invalid parameter."),
+        "13":(13,"ADDR_ERROR", "Address is not on word boundary."),
+        "14":(14,"ADDR_NOT_MAPPED", "Address is not mapped in the memory map. Count value is taken in to consideration where applicable."),
+        "15":(15,"CMD_LOCKED", "Command is locked."),
+        "16":(16,"INVALID_CODE", "Unlock code is invalid."),
+        "17":(17,"INVALID_BAUD_RATE", "Invalid baud rate setting."),
+        "18":(18,"INVALID_STOP_BIT", "Invalid stop bit setting."),
+        "19":(19,"CODE_READ_PROTECTION_ENABLED", "Code read protection enabled."),
+    }
+
 # flash sector sizes for lpc23xx/lpc24xx/lpc214x processors
 flash_sector_lpc23xx = (4, 4, 4, 4, 4, 4, 4, 4, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 4, 4, 4, 4, 4, 4)
 
@@ -773,14 +796,16 @@ class nxpprog:
         return status
 
     def sync(self, osc):
+        #start sync by sending chip question mark to set autobaud, should receive Syncronized as response.
         self.dev_write(b'?')
         s = self.dev_readline()
         if not s:
-            panic("Sync timeout")
-        logging.debug("initial sync = %s" % s)
+            raise RuntimeError("No sync string not received.")
+        
         if self.sync_str not in s:
-            panic("No sync string")
-
+            raise RuntimeError("Correct sync string not received.")
+        
+        #echo sync string to chip, should get OK as response
         self.dev_writeln(self.sync_str)
         s = self.dev_readline()
 
@@ -788,36 +813,40 @@ class nxpprog:
         if s == self.sync_str:
             self.echo_on = True
             s = self.dev_readline()
+            
         elif s == self.OK:
             self.echo_on = False
-        else:
+        
+        elif s != self.OK:
             logging.debug("echo sync = %s" % s)
-            panic("No sync string")
-
-        if s != self.OK:
-            panic("Not ok")
+            raise RuntimeError("Chip did not accept sync request.")
 
         # set the oscillator frequency
         self.dev_writeln('%d' % osc)
         if self.echo_on:
+            #read echo from buffer
             s = self.dev_readline()
             if s != ('%d' % osc):
-                panic('Invalid echo')
-
+                raise RuntimeError("Chip did not echo OCS command.")
+                
+        # read response from OSC command 
         s = self.dev_readline()
         if s != self.OK:
             if s == str(INVALID_COMMAND):
                 pass
             else:
-                self.errexit("'%d' osc not ok" % osc, s)
-                panic("Osc not ok")
-
+                raise RuntimeError(f"Chip did not accept OCS command.\n\r{status[s]}")
+        
+        self.set_echo(False)
+        return True
+    
+    def set_echo(self, echo):
         # disable echo
         self.dev_writeln('A 0')
         if self.echo_on:
             s = self.dev_readline()
             if s != 'A 0':
-                panic('Invalid echo')
+                raise RuntimeError('Invalid echo')
 
         s = self.dev_readline()
         if s == str(CMD_SUCCESS):
@@ -825,9 +854,10 @@ class nxpprog:
         elif s == str(INVALID_COMMAND):
             pass
         else:
-            self.errexit("'A 0' echo disable failed", s)
-            panic("Echo disable failed")
-
+            raise RuntimeError("Echo disable failed")
+        
+        return True
+    
     def sum(self, data):
         s = 0
         if isinstance(data, str):

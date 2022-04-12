@@ -1124,6 +1124,7 @@ class nxpprog:
             if verify:
                 result = self.isp_command("M %d %d %d" % (flash_addr_start, ram_addr, a_ram_block))
                 if result == str(CMD_SUCCESS):
+                    self.logger.info(f"Verified block at 0x{flash_addr_start:02x}")
                     pass
                 elif result == str(COMPARE_ERROR):
                     self.dev_readline() # offset
@@ -1132,6 +1133,10 @@ class nxpprog:
                     raise RuntimeError("Flash address {flash_addr_start} did not verify to ram.")
 
             self.progress(image_len - 1, image_len)
+        if success:
+            self.logger.info("Programing was successful.")
+        else:
+            self.logger.error("Programming Failed.")
         return success
     
     def progress(self, total, current):
